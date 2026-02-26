@@ -671,6 +671,7 @@ public class MpegEncContext {
      * - encoding: unused
      * - decoding: Set by user.
      */
+    @Deprecated
     public long reordered_opaque;
     public int progressive_frame;
     public int progressive_sequence;
