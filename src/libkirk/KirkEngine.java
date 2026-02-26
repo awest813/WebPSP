@@ -688,6 +688,9 @@ public class KirkEngine {
 		memcpy(header.CMAC_header_hash, cmac_header_hash, 16);
 		memcpy(header.CMAC_data_hash, cmac_data_hash, 16);
 
+		memcpy(outbuff, outoffset + 0x20, cmac_header_hash, 16);
+		memcpy(outbuff, outoffset + 0x30, cmac_data_hash, 16);
+
 		//ENCRYPT KEYS
 		AES_cbc_encrypt(aes_kirk1, inbuff, outbuff, 16*2);
 		return KIRK_OPERATION_SUCCESS;
@@ -746,11 +749,7 @@ public class KirkEngine {
 		} else  {
 			int ret = kirk_CMD10(inbuff, inoffset, size);
 			if (ret != KIRK_OPERATION_SUCCESS) {
-	            // TODO Verify why the CMAC hashes aren't matching
-				//return ret;
-				if (log.isDebugEnabled()) {
-					log.debug(String.format("Kirk KIRK_CMD_DECRYPT_PRIVATE ignoring that CMAC hashes were not matching (ret=0x%X)", ret));
-				}
+				return ret;
 			}
 		}
 
@@ -781,9 +780,7 @@ public class KirkEngine {
 
 		int ret = kirk_CMD10(inbuff, inoffset, size);
 		if (ret != KIRK_OPERATION_SUCCESS) {
-			if (log.isDebugEnabled()) {
-				log.debug(String.format("Kirk KIRK_CMD_ENCRYPT_SIGN ignoring that CMAC hashes were not matching (ret=0x%X)", ret));
-			}
+			return ret;
 		}
 
         // The header is kept in the output and the header.mode is updated from
@@ -818,9 +815,7 @@ public class KirkEngine {
 
 		int ret = kirk_CMD10(inbuff, inoffset, size);
 		if (ret != KIRK_OPERATION_SUCCESS) {
-			if (log.isDebugEnabled()) {
-				log.debug(String.format("Kirk KIRK_CMD_DECRYPT_SIGN ignoring that CMAC hashes were not matching (ret=0x%X)", ret));
-			}
+			return ret;
 		}
 
 		// The output is only containing the decrypted data, there is no header.
