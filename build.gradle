@@ -1,0 +1,84 @@
+plugins {
+    id 'java'
+}
+
+group = 'org.jpcsp'
+version = '0.7'
+
+repositories {
+    mavenCentral()
+    flatDir {
+        dirs 'lib'
+    }
+}
+
+dependencies {
+    // ASM
+    implementation 'org.ow2.asm:asm:9.1'
+    implementation 'org.ow2.asm:asm-analysis:9.1'
+    implementation 'org.ow2.asm:asm-tree:9.1'
+    implementation 'org.ow2.asm:asm-util:9.1'
+
+    // Bouncy Castle
+    implementation 'org.bouncycastle:bcprov-jdk15on:1.69'
+
+    // JInput
+    implementation 'net.java.jinput:jinput:2.0.9'
+
+    // JNA
+    implementation 'net.java.dev.jna:jna:5.8.0'
+
+    // Log4j
+    implementation('log4j:log4j:1.2.15') {
+        exclude group: 'javax.jms', module: 'jms'
+        exclude group: 'com.sun.jdmk', module: 'jmxtools'
+        exclude group: 'com.sun.jmx', module: 'jmxri'
+        exclude group: 'javax.mail', module: 'mail'
+    }
+
+    // LWJGL
+    implementation 'org.lwjgl:lwjgl:3.2.3'
+    implementation 'org.lwjgl:lwjgl-opengl:3.2.3'
+    implementation 'org.lwjgl:lwjgl-openal:3.2.3'
+    implementation 'org.lwjgl:lwjgl-glfw:3.2.3'
+    implementation 'org.lwjgl:lwjgl-jawt:3.2.3'
+
+    // XZ
+    implementation 'org.tukaani:xz:1.9'
+
+    // Dependencies likely needing local jars or flatDir lookup if not in Maven Central or if customized
+    // Note: name: 'foo' looks for foo.jar in flatDir
+    implementation name: 'jide-oss-3.7.12'
+    implementation name: 'lwjgl3-awt-0.1.8'
+    implementation name: 'xuggle-xuggler-noarch-5.4'
+
+    // Testing
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.hamcrest:hamcrest:2.2'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src']
+        }
+        resources {
+            srcDirs = ['resources']
+        }
+    }
+    test {
+        java {
+            srcDirs = ['test']
+        }
+    }
+}
+
+// Java compatibility
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
