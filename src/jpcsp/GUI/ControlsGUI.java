@@ -413,8 +413,8 @@ public class ControlsGUI extends javax.swing.JFrame implements KeyListener {
         }
     }
 
-    public ComboBoxModel makeControllerComboBoxModel() {
-        MutableComboBoxModel comboBox = new DefaultComboBoxModel();
+    public ComboBoxModel<Controller> makeControllerComboBoxModel() {
+        MutableComboBoxModel<Controller> comboBox = new DefaultComboBoxModel<>();
         ControllerEnvironment ce = ControllerEnvironment.getDefaultEnvironment();
         Controller[] controllers = ce.getControllers();
         for (Controller c : controllers) {
@@ -433,7 +433,7 @@ public class ControlsGUI extends javax.swing.JFrame implements KeyListener {
         java.awt.GridBagConstraints gridBagConstraints;
 
         controllerLabel = new javax.swing.JLabel();
-        controllerBox = new javax.swing.JComboBox();
+        controllerBox = new javax.swing.JComboBox<>();
         keyPanel = new javax.swing.JPanel();
         fgPanel = new javax.swing.JPanel();
         fieldStart = new javax.swing.JTextField();
@@ -1062,7 +1062,7 @@ private void jButtonOKActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIR
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel bgLabel1;
     private jpcsp.GUI.CancelButton cancelButton;
-    private javax.swing.JComboBox controllerBox;
+    private javax.swing.JComboBox<Controller> controllerBox;
     private javax.swing.JLabel controllerLabel;
     private javax.swing.JPanel fgPanel;
     private javax.swing.JTextField fieldAnalogDown;

@@ -747,7 +747,7 @@ public class KirkEngine {
 				return KIRK_DATA_HASH_INVALID;
 			}
 		} else  {
-			int ret = kirk_CMD10(inbuff, inoffset, size);
+			int ret = kirk_CMD10_internal(inbuff, inoffset, size, header, keys);
 			if (ret != KIRK_OPERATION_SUCCESS) {
 				return ret;
 			}
@@ -979,9 +979,6 @@ public class KirkEngine {
 	public static int kirk_CMD10(byte[] inbuff, int inoffset, int insize) {
 		KIRK_CMD1_HEADER header = new KIRK_CMD1_HEADER(inbuff, inoffset);
 		header_keys keys = new header_keys(); //0-15 AES key, 16-31 CMAC key
-		final byte[] cmac_header_hash = new byte[16];
-		final byte[] cmac_data_hash = new byte[16];
-		AES.AES_ctx cmac_key = new AES.AES_ctx();
 
 		if (!is_kirk_initialized) {
 			return KIRK_NOT_INITIALIZED;
@@ -999,6 +996,17 @@ public class KirkEngine {
 
 		if (header.mode == KIRK_MODE_CMD1) {
 			AES_cbc_decrypt(aes_kirk1, inbuff, inoffset, keys, 32); //decrypt AES & CMAC key to temp buffer
+		}
+
+		return kirk_CMD10_internal(inbuff, inoffset, insize, header, keys);
+	}
+
+	private static int kirk_CMD10_internal(byte[] inbuff, int inoffset, int insize, KIRK_CMD1_HEADER header, header_keys keys) {
+		final byte[] cmac_header_hash = new byte[16];
+		final byte[] cmac_data_hash = new byte[16];
+		AES.AES_ctx cmac_key = new AES.AES_ctx();
+
+		if (header.mode == KIRK_MODE_CMD1) {
 		    AES_set_key(cmac_key, keys.CMAC, 128);
 		    AES_CMAC(cmac_key, inbuff, inoffset + 0x60, 0x30, cmac_header_hash);
 

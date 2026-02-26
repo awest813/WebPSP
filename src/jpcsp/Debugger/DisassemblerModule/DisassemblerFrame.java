@@ -193,7 +193,8 @@ public class DisassemblerFrame extends javax.swing.JFrame implements ClipboardOw
 		});
 
         ViewTooltips.register(disasmList);
-        disasmList.setCellRenderer(new StyledListCellRenderer() {
+        @SuppressWarnings("unchecked")
+        StyledListCellRenderer renderer = new StyledListCellRenderer() {
             private static final long serialVersionUID = 3921020228217850610L;
 
             @Override
@@ -208,7 +209,8 @@ public class DisassemblerFrame extends javax.swing.JFrame implements ClipboardOw
                 }
                 DisassemblerFrame.this.customizeStyledLabel(this, text);
             }
-        });
+        };
+        disasmList.setCellRenderer(renderer);
         disasmList.addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
