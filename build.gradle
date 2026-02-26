@@ -28,13 +28,10 @@ dependencies {
     // JNA
     implementation 'net.java.dev.jna:jna:5.8.0'
 
-    // Log4j
-    implementation('log4j:log4j:1.2.15') {
-        exclude group: 'javax.jms', module: 'jms'
-        exclude group: 'com.sun.jdmk', module: 'jmxtools'
-        exclude group: 'com.sun.jmx', module: 'jmxri'
-        exclude group: 'javax.mail', module: 'mail'
-    }
+    // Log4j 2
+    implementation 'org.apache.logging.log4j:log4j-api:2.20.0'
+    implementation 'org.apache.logging.log4j:log4j-core:2.20.0'
+    implementation 'org.apache.logging.log4j:log4j-1.2-api:2.20.0'
 
     // LWJGL
     implementation 'org.lwjgl:lwjgl:3.2.3'
@@ -75,8 +72,8 @@ sourceSets {
 
 // Java compatibility
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 tasks.withType(JavaCompile) {

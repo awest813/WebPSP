@@ -36,7 +36,6 @@ package jpcsp.log;
 
 import org.apache.log4j.Layout;
 import org.apache.log4j.Level;
-import org.apache.log4j.helpers.Transform;
 import org.apache.log4j.spi.LocationInfo;
 import org.apache.log4j.spi.LoggingEvent;
 
@@ -138,11 +137,9 @@ public class HTMLLayout extends Layout {
 	/**
 	 * No options to activate.
 	 */
-	@Override
 	public void activateOptions() {
 	}
 
-	@Override
 	public String format(LoggingEvent event) {
 
 		if (sbuf.capacity() > MAX_CAPACITY) {
@@ -157,7 +154,7 @@ public class HTMLLayout extends Layout {
 		sbuf.append(event.timeStamp - LoggingEvent.getStartTime());
 		sbuf.append("</td>" + Layout.LINE_SEP);
 
-		String escapedThread = Transform.escapeTags(event.getThreadName());
+		String escapedThread = escapeTags(event.getThreadName());
 		sbuf.append("<td title=\"" + escapedThread + " thread\">");
 		sbuf.append(escapedThread);
 		sbuf.append("</td>" + Layout.LINE_SEP);
@@ -167,18 +164,18 @@ public class HTMLLayout extends Layout {
 		sbuf.append("\">");
 		if (event.getLevel().equals(Level.DEBUG)) {
 			sbuf.append("<font color=\"#339933\">");
-			sbuf.append(Transform.escapeTags(String.valueOf(event.getLevel())));
+			sbuf.append(escapeTags(String.valueOf(event.getLevel())));
 			sbuf.append("</font>");
 		} else if (event.getLevel().isGreaterOrEqual(Level.WARN)) {
 			sbuf.append("<font color=\"#993300\"><strong>");
-			sbuf.append(Transform.escapeTags(String.valueOf(event.getLevel())));
+			sbuf.append(escapeTags(String.valueOf(event.getLevel())));
 			sbuf.append("</strong></font>");
 		} else {
-			sbuf.append(Transform.escapeTags(String.valueOf(event.getLevel())));
+			sbuf.append(escapeTags(String.valueOf(event.getLevel())));
 		}
 		sbuf.append("</td>" + Layout.LINE_SEP);
 
-		String escapedLogger = Transform.escapeTags(event.getLoggerName());
+		String escapedLogger = escapeTags(event.getLoggerName());
 		sbuf.append("<td title=\"" + escapedLogger + " category\">");
 		sbuf.append(escapedLogger);
 		sbuf.append("</td>" + Layout.LINE_SEP);
@@ -186,21 +183,21 @@ public class HTMLLayout extends Layout {
 		if (locationInfo) {
 			LocationInfo locInfo = event.getLocationInformation();
 			sbuf.append("<td>");
-			sbuf.append(Transform.escapeTags(locInfo.getFileName()));
+			sbuf.append(escapeTags(locInfo.getFileName()));
 			sbuf.append(':');
 			sbuf.append(locInfo.getLineNumber());
 			sbuf.append("</td>" + Layout.LINE_SEP);
 		}
 
 		sbuf.append("<td title=\"Message\" class=\"message\">");
-		sbuf.append(Transform.escapeTags(event.getRenderedMessage()));
+		sbuf.append(escapeTags(event.getRenderedMessage()));
 		sbuf.append("</td>" + Layout.LINE_SEP);
 		sbuf.append("</tr>" + Layout.LINE_SEP);
 
 		if (event.getNDC() != null) {
 			sbuf
 					.append("<tr><td bgcolor=\"#EEEEEE\" style=\"font-size : xx-small;\" colspan=\"6\" title=\"Nested Diagnostic Context\">");
-			sbuf.append("NDC: " + Transform.escapeTags(event.getNDC()));
+			sbuf.append("NDC: " + escapeTags(event.getNDC()));
 			sbuf.append("</td></tr>" + Layout.LINE_SEP);
 		}
 
@@ -220,15 +217,37 @@ public class HTMLLayout extends Layout {
 			int len = s.length;
 			if (len == 0)
 				return;
-			sbuf.append(Transform.escapeTags(s[0]));
+			sbuf.append(escapeTags(s[0]));
 			sbuf.append(Layout.LINE_SEP);
 			for (int i = 1; i < len; i++) {
 				sbuf.append(TRACE_PREFIX);
-				sbuf.append(Transform.escapeTags(s[i]));
+				sbuf.append(escapeTags(s[i]));
 				sbuf.append(Layout.LINE_SEP);
 			}
 		}
 	}
+
+    private static String escapeTags(String s) {
+        if (s == null) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '<') {
+                sb.append("&lt;");
+            } else if (c == '>') {
+                sb.append("&gt;");
+            } else if (c == '"') {
+                sb.append("&quot;");
+            } else if (c == '&') {
+                sb.append("&amp;");
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
 
 	/**
 	 * Returns appropriate HTML headers.

@@ -401,10 +401,16 @@ public class UmdBrowser extends javax.swing.JDialog {
         // to avoid an exception "PNGImageDecoder$PNGException: crc corruption" when reading incorrect PNG files.
     	// Do not access this class using reflection as this is producing a warning on JDK 9 or later.
         try {
-        	// getClass().getClassLoader().loadClass("sun.awt.image.PNGImageDecoder").getMethod("	", boolean.class).invoke(null, false);
-        	sun.awt.image.PNGImageDecoder.setCheckCRC(false);
+		// sun.awt.image.PNGImageDecoder is internal API and not exported in Java 9+
+            // Reflection or direct access fails. We should probably move to ImageIO.
+            // For now, attempting reflection with setAccessible if possible, or just ignoring it
+            // as this hack might not be needed or possible on newer JDKs.
+            Class<?> decoderClass = Class.forName("sun.awt.image.PNGImageDecoder");
+            java.lang.reflect.Method method = decoderClass.getMethod("setCheckCRC", boolean.class);
+            method.setAccessible(true);
+            method.invoke(null, false);
         } catch (Throwable e) {
-        	log.warn(e);
+		log.warn("Could not set PNGImageDecoder.setCheckCRC(false): " + e);
         }
     }
 
