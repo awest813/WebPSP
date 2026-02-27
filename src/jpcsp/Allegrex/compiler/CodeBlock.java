@@ -206,10 +206,10 @@ public class CodeBlock {
             // Try to define a new class for this executable.
             return (Class<IExecutable>) context.getClassLoader().defineClass(className, bytes);
         } catch (ClassFormatError e) {
-    		// This exception is catched by the Compiler
-    		throw e;
+		// This exception is catched by the Compiler
+		throw e;
         } catch (LinkageError le) {
-        	// If the class already exists, try finding it in this context.
+		// If the class already exists, try finding it in this context.
             try {
                 return (Class<IExecutable>)context.getClassLoader().findClass(className);
             } catch (ClassNotFoundException cnfe) {
@@ -230,10 +230,10 @@ public class CodeBlock {
 	}
 
     private void addNonStaticMethods(CompilerContext context, ClassVisitor cv) {
-    	MethodVisitor mv;
+	MethodVisitor mv;
 
-    	// public int exec(int returnAddress, int alternativeReturnAddress, boolean isJump) throws Exception;
-    	mv = cv.visitMethod(Opcodes.ACC_PUBLIC, context.getExecMethodName(), context.getExecMethodDesc(), null, exceptions);
+	// public int exec(int returnAddress, int alternativeReturnAddress, boolean isJump) throws Exception;
+	mv = cv.visitMethod(Opcodes.ACC_PUBLIC, context.getExecMethodName(), context.getExecMethodDesc(), null, exceptions);
         mv.visitCode();
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, getClassName(), context.getStaticExecMethodName(), context.getStaticExecMethodDesc(), false);
         mv.visitInsn(Opcodes.IRETURN);
@@ -263,11 +263,11 @@ public class CodeBlock {
     }
 
     private void addCodeSequence(List<CodeSequence> codeSequences, CodeSequence codeSequence) {
-    	if (codeSequence != null) {
-    		if (codeSequence.getLength() > 1) {
-    			codeSequences.add(codeSequence);
-    		}
-    	}
+	if (codeSequence != null) {
+		if (codeSequence.getLength() > 1) {
+			codeSequences.add(codeSequence);
+		}
+	}
     }
 
     private void generateCodeSequences(List<CodeSequence> codeSequences, int sequenceMaxInstructions) {
@@ -281,30 +281,30 @@ public class CodeBlock {
                 // Skip it
             } else {
                 if (codeInstruction.hasFlags(Instruction.FLAG_CANNOT_BE_SPLIT)) {
-                	addCodeSequence(codeSequences, currentCodeSequence);
+			addCodeSequence(codeSequences, currentCodeSequence);
                     currentCodeSequence = null;
                     if (codeInstruction.hasFlags(Instruction.FLAG_HAS_DELAY_SLOT)) {
                         nextAddress = address + 8;
                     }
                 } else if (codeInstruction.isBranchTarget()) {
-                	addCodeSequence(codeSequences, currentCodeSequence);
+			addCodeSequence(codeSequences, currentCodeSequence);
                     currentCodeSequence = new CodeSequence(address);
                 } else {
                     if (currentCodeSequence == null) {
                         currentCodeSequence = new CodeSequence(address);
                     } else if (currentCodeSequence.getLength() + codeInstruction.getLength() > sequenceMaxInstructionsWithDelay) {
-                    	boolean doSplit = false;
-                		if (currentCodeSequence.getLength() + codeInstruction.getLength() > sequenceMaxInstructions) {
-                			doSplit = true;
-                		} else if (codeInstruction.hasFlags(Instruction.FLAG_HAS_DELAY_SLOT)) {
-                			doSplit = true;
-                		}
-                    	if (doSplit) {
-                        	addCodeSequence(codeSequences, currentCodeSequence);
+			boolean doSplit = false;
+				if (currentCodeSequence.getLength() + codeInstruction.getLength() > sequenceMaxInstructions) {
+					doSplit = true;
+				} else if (codeInstruction.hasFlags(Instruction.FLAG_HAS_DELAY_SLOT)) {
+					doSplit = true;
+				}
+			if (doSplit) {
+				addCodeSequence(codeSequences, currentCodeSequence);
                             currentCodeSequence = new CodeSequence(address);
-                    	}
+			}
                     }
-                	currentCodeSequence.setEndAddress(codeInstruction.getEndAddress());
+			currentCodeSequence.setEndAddress(codeInstruction.getEndAddress());
                 }
             }
         }
@@ -369,63 +369,63 @@ public class CodeBlock {
     }
 
     private void scanNativeCodeSequences(CompilerContext context) {
-    	NativeCodeManager nativeCodeManager = context.getNativeCodeManager();
-    	for (ListIterator<CodeInstruction> lit = codeInstructions.listIterator(); lit.hasNext(); ) {
-    		CodeInstruction codeInstruction = lit.next();
-    		NativeCodeSequence nativeCodeSequence = nativeCodeManager.getNativeCodeSequence(codeInstruction, this);
-    		if (nativeCodeSequence != null) {
-    			if (nativeCodeSequence.isHook()) {
-    				HookCodeInstruction hookCodeInstruction = new HookCodeInstruction(nativeCodeSequence, codeInstruction);
+	NativeCodeManager nativeCodeManager = context.getNativeCodeManager();
+	for (ListIterator<CodeInstruction> lit = codeInstructions.listIterator(); lit.hasNext(); ) {
+		CodeInstruction codeInstruction = lit.next();
+		NativeCodeSequence nativeCodeSequence = nativeCodeManager.getNativeCodeSequence(codeInstruction, this);
+		if (nativeCodeSequence != null) {
+			if (nativeCodeSequence.isHook()) {
+				HookCodeInstruction hookCodeInstruction = new HookCodeInstruction(nativeCodeSequence, codeInstruction);
 
-    				// Replace the current code instruction by the hook code instruction
-    				lit.remove();
-    				lit.add(hookCodeInstruction);
-    			} else {
-    				NativeCodeInstruction nativeCodeInstruction = new NativeCodeInstruction(codeInstruction.getAddress(), nativeCodeSequence);
+				// Replace the current code instruction by the hook code instruction
+				lit.remove();
+				lit.add(hookCodeInstruction);
+			} else {
+				NativeCodeInstruction nativeCodeInstruction = new NativeCodeInstruction(codeInstruction.getAddress(), nativeCodeSequence);
 
-	    			if (nativeCodeInstruction.isBranching()) {
-	    				setIsBranchTarget(nativeCodeInstruction.getBranchingTo());
-	    			}
+				if (nativeCodeInstruction.isBranching()) {
+					setIsBranchTarget(nativeCodeInstruction.getBranchingTo());
+				}
 
-	    			if (nativeCodeSequence.isWholeCodeBlock()) {
-	    				codeInstructions.clear();
-	    				codeInstructions.add(nativeCodeInstruction);
-	    			} else {
-	    				// Remove the first opcode that started this native code sequence
-		    			lit.remove();
+				if (nativeCodeSequence.isWholeCodeBlock()) {
+					codeInstructions.clear();
+					codeInstructions.add(nativeCodeInstruction);
+				} else {
+					// Remove the first opcode that started this native code sequence
+					lit.remove();
 
-		    			// Add any code instructions that need to be inserted before
-		    			// the native code sequence
-		    			List<CodeInstruction> beforeCodeInstructions = nativeCodeSequence.getBeforeCodeInstructions();
-		    			if (beforeCodeInstructions != null) {
-		    				for (CodeInstruction beforeCodeInstruction : beforeCodeInstructions) {
-		    					CodeInstruction newCodeInstruction = new CodeInstruction(beforeCodeInstruction);
-		    					newCodeInstruction.setAddress(codeInstruction.getAddress());
+					// Add any code instructions that need to be inserted before
+					// the native code sequence
+					List<CodeInstruction> beforeCodeInstructions = nativeCodeSequence.getBeforeCodeInstructions();
+					if (beforeCodeInstructions != null) {
+						for (CodeInstruction beforeCodeInstruction : beforeCodeInstructions) {
+							CodeInstruction newCodeInstruction = new CodeInstruction(beforeCodeInstruction);
+							newCodeInstruction.setAddress(codeInstruction.getAddress());
 
-		    					lit.add(newCodeInstruction);
-		    				}
-		    			}
+							lit.add(newCodeInstruction);
+						}
+					}
 
-		    			// Add the native code sequence itself
-		    			lit.add(nativeCodeInstruction);
+					// Add the native code sequence itself
+					lit.add(nativeCodeInstruction);
 
-		    			// Remove the further opcodes from the native code sequence
-		    			for (int i = nativeCodeSequence.getNumOpcodes() - 1; i > 0 && lit.hasNext(); i--) {
-		    				lit.next();
-		    				lit.remove();
-		    			}
-	    			}
-    			}
-    		}
-    	}
+					// Remove the further opcodes from the native code sequence
+					for (int i = nativeCodeSequence.getNumOpcodes() - 1; i > 0 && lit.hasNext(); i--) {
+						lit.next();
+						lit.remove();
+					}
+				}
+			}
+		}
+	}
     }
 
     private void prepare(CompilerContext context, int methodMaxInstructions) {
-    	memoryRanges.updateValues();
+	memoryRanges.updateValues();
 
-    	scanNativeCodeSequences(context);
+	scanNativeCodeSequences(context);
 
-    	if (codeInstructions.size() > methodMaxInstructions) {
+	if (codeInstructions.size() > methodMaxInstructions) {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Splitting %s (%d/%d)", getClassName(), codeInstructions.size(), methodMaxInstructions));
             }
@@ -434,29 +434,34 @@ public class CodeBlock {
     }
 
     private void compile(CompilerContext context, MethodVisitor mv, List<CodeInstruction> codeInstructions) {
-    	context.optimizeSequence(codeInstructions);
+	context.optimizeSequence(codeInstructions);
 
-    	int numberInstructionsToBeSkipped = 0;
+	int[] cachedRegisters = RegisterAnalyzer.getMostFrequentRegisters(codeInstructions);
+	context.startCachingRegisters(cachedRegisters);
+
+	int numberInstructionsToBeSkipped = 0;
         for (CodeInstruction codeInstruction : codeInstructions) {
             if (numberInstructionsToBeSkipped > 0) {
-            	if (!context.isSkipDelaySlot() && codeInstruction.isBranchTarget()) {
-            		context.compileDelaySlotAsBranchTarget(codeInstruction);
-            	}
-            	numberInstructionsToBeSkipped--;
+		if (!context.isSkipDelaySlot() && codeInstruction.isBranchTarget()) {
+			context.compileDelaySlotAsBranchTarget(codeInstruction);
+		}
+		numberInstructionsToBeSkipped--;
 
-            	if (numberInstructionsToBeSkipped <= 0) {
+		if (numberInstructionsToBeSkipped <= 0) {
                     context.skipInstructions(0, false);
-            	}
+		}
             } else {
                 codeInstruction.compile(context, mv);
                 numberInstructionsToBeSkipped = context.getNumberInstructionsToBeSkipped();
             }
         }
+
+        context.flushCachedRegisters();
     }
 
     private Class<IExecutable> interpret(CompilerContext context) {
 		Class<IExecutable> compiledClass = null;
-    	
+
 		context.setCodeBlock(this);
 		String className = getInternalClassName();
 		if (log.isInfoEnabled()) {
@@ -467,25 +472,25 @@ public class CodeBlock {
 		if (context.isAutomaticMaxLocals() || context.isAutomaticMaxStack()) {
 		    computeFlag |= ClassWriter.COMPUTE_MAXS;
 		}
-    	ClassWriter cw = new ClassWriter(computeFlag);
-    	ClassVisitor cv = cw;
-    	if (log.isDebugEnabled()) {
-    		cv = new CheckClassAdapter(cv);
-    	}
+	ClassWriter cw = new ClassWriter(computeFlag);
+	ClassVisitor cv = cw;
+	if (log.isDebugEnabled()) {
+		cv = new CheckClassAdapter(cv);
+	}
 
-    	StringWriter debugOutput = null;
-    	if (log.isTraceEnabled()) {
-    	    debugOutput = new StringWriter();
-    	    PrintWriter debugPrintWriter = new PrintWriter(debugOutput);
-    	    cv = new TraceClassVisitor(cv, debugPrintWriter);
-    	}
-    	cv.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER, className, null, objectInternalName, interfacesForExecutable);
-    	context.startClass(cv);
+	StringWriter debugOutput = null;
+	if (log.isTraceEnabled()) {
+	    debugOutput = new StringWriter();
+	    PrintWriter debugPrintWriter = new PrintWriter(debugOutput);
+	    cv = new TraceClassVisitor(cv, debugPrintWriter);
+	}
+	cv.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER, className, null, objectInternalName, interfacesForExecutable);
+	context.startClass(cv);
 
-    	addConstructor(cv);
-    	addNonStaticMethods(context, cv);
+	addConstructor(cv);
+	addNonStaticMethods(context, cv);
 
-    	MethodVisitor mv = cv.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, context.getStaticExecMethodName(), context.getStaticExecMethodDesc(), null, exceptions);
+	MethodVisitor mv = cv.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, context.getStaticExecMethodName(), context.getStaticExecMethodDesc(), null, exceptions);
         mv.visitCode();
         context.setMethodVisitor(mv);
         context.startMethod();
@@ -497,13 +502,13 @@ public class CodeBlock {
 
         cv.visitEnd();
 
-    	if (debugOutput != null) {
-    	    log.trace(debugOutput.toString());
-    	}
+	if (debugOutput != null) {
+	    log.trace(debugOutput.toString());
+	}
 
 	    compiledClass = loadExecutable(context, className, cw.toByteArray());
 
-    	return compiledClass;
+	return compiledClass;
     }
 
     private Class<IExecutable> compile(CompilerContext context) throws ClassFormatError {
@@ -528,34 +533,34 @@ public class CodeBlock {
 		if (context.isAutomaticMaxLocals() || context.isAutomaticMaxStack()) {
 		    computeFlag |= ClassWriter.COMPUTE_MAXS;
 		}
-    	ClassWriter cw = new ClassWriter(computeFlag);
-    	ClassVisitor cv = cw;
-    	if (log.isDebugEnabled()) {
-    		cv = new CheckClassAdapter(cv);
-    	}
+	ClassWriter cw = new ClassWriter(computeFlag);
+	ClassVisitor cv = cw;
+	if (log.isDebugEnabled()) {
+		cv = new CheckClassAdapter(cv);
+	}
         StringWriter debugOutput = null;
-    	if (log.isTraceEnabled()) {
-    	    debugOutput = new StringWriter();
-    	    PrintWriter debugPrintWriter = new PrintWriter(debugOutput);
-    	    cv = new TraceClassVisitor(cv, debugPrintWriter);
-    	}
-    	cv.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER, className, null, objectInternalName, interfacesForExecutable);
-    	context.startClass(cv);
+	if (log.isTraceEnabled()) {
+	    debugOutput = new StringWriter();
+	    PrintWriter debugPrintWriter = new PrintWriter(debugOutput);
+	    cv = new TraceClassVisitor(cv, debugPrintWriter);
+	}
+	cv.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER, className, null, objectInternalName, interfacesForExecutable);
+	context.startClass(cv);
 
-    	addConstructor(cv);
-    	addNonStaticMethods(context, cv);
+	addConstructor(cv);
+	addNonStaticMethods(context, cv);
 
-    	MethodVisitor mv = cv.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, context.getStaticExecMethodName(), context.getStaticExecMethodDesc(), null, exceptions);
+	MethodVisitor mv = cv.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, context.getStaticExecMethodName(), context.getStaticExecMethodDesc(), null, exceptions);
         mv.visitCode();
         context.setMethodVisitor(mv);
         context.startMethod();
 
         // Jump to the block start if other instructions have been inserted in front
         if (!codeInstructions.isEmpty() && codeInstructions.getFirst().getAddress() != getStartAddress()) {
-        	CodeInstruction startCodeInstruction = getCodeInstruction(getStartAddress());
-        	if (startCodeInstruction != null) {
-        		mv.visitJumpInsn(Opcodes.GOTO, startCodeInstruction.getLabel());
-        	}
+		CodeInstruction startCodeInstruction = getCodeInstruction(getStartAddress());
+		if (startCodeInstruction != null) {
+			mv.visitJumpInsn(Opcodes.GOTO, startCodeInstruction.getLabel());
+		}
         }
 
         compile(context, mv, codeInstructions);
@@ -582,17 +587,17 @@ public class CodeBlock {
 
         cv.visitEnd();
 
-    	if (debugOutput != null) {
-    	    log.trace(debugOutput.toString());
-    	}
+	if (debugOutput != null) {
+	    log.trace(debugOutput.toString());
+	}
 
-    	try {
-    		compiledClass = loadExecutable(context, className, cw.toByteArray());
-    	} catch (NullPointerException e) {
-    		log.error("Error while compiling " + className + ": " + e);
-    	}
+	try {
+		compiledClass = loadExecutable(context, className, cw.toByteArray());
+	} catch (NullPointerException e) {
+		log.error("Error while compiling " + className + ": " + e);
+	}
 
-    	return compiledClass;
+	return compiledClass;
 	}
 
     public IExecutable getExecutable() {
@@ -617,7 +622,7 @@ public class CodeBlock {
 	}
 
     public synchronized IExecutable getInterpretedExecutable(CompilerContext context) {
-    	if (executable == null) {
+	if (executable == null) {
 	        Class<IExecutable> classExecutable = interpret(context);
 	        if (classExecutable != null) {
 	            try {
@@ -628,17 +633,17 @@ public class CodeBlock {
                     log.error(e);
                 }
 	        }
-    	}
+	}
 
-    	return executable;
+	return executable;
     }
 
     public int getInstanceIndex() {
-    	return instanceIndex;
+	return instanceIndex;
     }
 
     public int getNewInstanceIndex() {
-    	return nextInstanceIndex++;
+	return nextInstanceIndex++;
     }
 
 	public Instruction[] getInterpretedInstructions() {
@@ -677,8 +682,8 @@ public class CodeBlock {
 	}
 
 	public boolean isInternal() {
-    	int addr = getStartAddress();
-    	return addr < INTERNAL_THREAD_ADDRESS_END && addr >= INTERNAL_THREAD_ADDRESS_START;
+	int addr = getStartAddress();
+	return addr < INTERNAL_THREAD_ADDRESS_END && addr >= INTERNAL_THREAD_ADDRESS_START;
 	}
 
     public int getFlags() {
