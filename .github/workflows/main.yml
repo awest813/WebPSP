@@ -19,6 +19,11 @@ jobs:
         with:
           java-version: '8'
           distribution: 'temurin'
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ant p7zip-full
         
       - name: Build with Ant
         run: ant -f build-auto.xml dist
