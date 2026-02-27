@@ -181,6 +181,8 @@ public class MainGUI extends javax.swing.JFrame implements KeyListener, Componen
     private boolean doUmdBuffering = false;
     private boolean runFromVsh = false;
     private String stateFileName = null;
+    private JLabel statusBar;
+    private javax.swing.Timer statusBarTimer;
 
     @Override
     public DisplayMode getDisplayMode() {
@@ -245,6 +247,24 @@ public class MainGUI extends javax.swing.JFrame implements KeyListener, Componen
         Modules.sceDisplayModule.getCanvas().addKeyListener(this);
         Modules.sceDisplayModule.getCanvas().addMouseListener(this);
         addComponentListener(this);
+
+        // Add status bar (non-fullscreen mode only)
+        if (!useFullscreen) {
+            statusBar = new JLabel(" Ready");
+            statusBar.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+                javax.swing.BorderFactory.createMatteBorder(1, 0, 0, 0, java.awt.Color.GRAY),
+                javax.swing.BorderFactory.createEmptyBorder(2, 5, 2, 5)));
+            statusBar.setFont(statusBar.getFont().deriveFont(java.awt.Font.PLAIN, 11f));
+            getContentPane().add(statusBar, java.awt.BorderLayout.SOUTH);
+            statusBarTimer = new javax.swing.Timer(1000, new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    updateStatusBar();
+                }
+            });
+            statusBarTimer.start();
+        }
+
         pack();
         
         // Check if any plugins are available.
@@ -1242,6 +1262,69 @@ public class MainGUI extends javax.swing.JFrame implements KeyListener, Componen
         }
 
         populateRecentMenu();
+
+        // Add Low Memory Mode menu item programmatically
+        OptionsMenu.addSeparator();
+        JMenuItem lowMemoryModeItem = new JMenuItem("Low Memory Mode");
+        lowMemoryModeItem.setToolTipText("Apply settings optimized for PCs with 1 GB RAM or less");
+        lowMemoryModeItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                applyLowMemoryMode();
+            }
+        });
+        OptionsMenu.add(lowMemoryModeItem);
+
+        // Add Turbo Mode toggle to the Clock Speed menu
+        ClockSpeedOpt.addSeparator();
+        final JCheckBoxMenuItem turboModeItem = new JCheckBoxMenuItem("Turbo Mode (200%)");
+        turboModeItem.setToolTipText("Toggle 200% emulation speed for fast-forwarding (Ctrl+T)");
+        turboModeItem.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_T, java.awt.event.InputEvent.CTRL_DOWN_MASK));
+        turboModeItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (turboModeItem.isSelected()) {
+                    Emulator.setVariableSpeedClock(2, 1);
+                    clockSpeedGroup.clearSelection();
+                } else {
+                    Emulator.setVariableSpeedClock(1, 1);
+                    ClockSpeedNormal.setSelected(true);
+                }
+            }
+        });
+        ClockSpeedOpt.add(turboModeItem);
+    }
+
+    private void applyLowMemoryMode() {
+        Settings settings = Settings.getInstance();
+        // Reduce texture and vertex cache sizes
+        settings.writeInt("emu.graphics.textureCache.maxSize", 100);
+        settings.writeInt("emu.graphics.vertexCache.maxSize", 5000);
+        // Disable shader features to reduce GPU memory usage
+        settings.writeBool("emu.useshaders", false);
+        settings.writeBool("emu.useGeometryShader", false);
+        settings.writeBool("emu.enabledynamicshaders", false);
+        settings.writeBool("emu.enablenativeclut", false);
+        // Disable VAO/UBO for compatibility
+        settings.writeBool("emu.enablevao", false);
+        settings.writeBool("emu.disableubo", true);
+        // Enable vertex cache (it's still useful, just smaller now)
+        settings.writeBool("emu.useVertexCache", true);
+        // Set frame skip to 30 FPS to reduce rendering load
+        Modules.sceDisplayModule.setDesiredFPS(30);
+        settings.writeInt("emu.graphics.frameskip.desiredFPS", 30);
+        settings.writeString("emu.performanceProfile", "Minimum");
+        JpcspDialogManager.showInformation(this,
+            "<html><b>Low Memory Mode Applied</b><br><br>" +
+            "The following settings have been applied for low-RAM PCs:<br>" +
+            "<ul>" +
+            "<li>Texture cache: 100 entries (was 1000)</li>" +
+            "<li>Vertex cache: 5000 entries (was 30000)</li>" +
+            "<li>Shaders disabled</li>" +
+            "<li>Frame limit: 30 FPS</li>" +
+            "</ul>" +
+            "Some changes (cache sizes) take effect after restarting the emulator.<br>" +
+            "Open Settings to customize individual options.</html>");
     }
 
     private void changeLanguage(String language) {
@@ -2953,6 +3036,21 @@ private void threeTimesResizeActionPerformed(java.awt.event.ActionEvent evt) {//
     final public void onUmdChange() {
         // Only enable the menu entry "Switch UMD" when sceUmdReplacePermit has been called by the application.
         switchUmd.setEnabled(Modules.sceUmdUserModule.isUmdAllowReplace());
+    }
+
+    private void updateStatusBar() {
+        if (statusBar == null) {
+            return;
+        }
+        Runtime runtime = Runtime.getRuntime();
+        long usedMemoryMB = (runtime.totalMemory() - runtime.freeMemory()) / (1024L * 1024L);
+        long maxMemoryMB = runtime.maxMemory() / (1024L * 1024L);
+        String profile = Settings.getInstance().readString("emu.performanceProfile", "Balanced");
+        int texCacheSize = Settings.getInstance().readInt("emu.graphics.textureCache.maxSize", 1000);
+        int vtxCacheSize = Settings.getInstance().readInt("emu.graphics.vertexCache.maxSize", 30000);
+        statusBar.setText(String.format(
+            " RAM: %d / %d MB | Tex cache: %d | Vtx cache: %d | Profile: %s",
+            usedMemoryMB, maxMemoryMB, texCacheSize, vtxCacheSize, profile));
     }
 
     /**

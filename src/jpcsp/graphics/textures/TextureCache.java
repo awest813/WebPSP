@@ -30,15 +30,17 @@ import jpcsp.Memory;
 import jpcsp.graphics.GeCommands;
 import jpcsp.graphics.VideoEngine;
 import jpcsp.graphics.RE.IRenderingEngine;
+import jpcsp.settings.Settings;
 import jpcsp.util.CacheStatistics;
 
 public class TextureCache {
-	public static final int cacheMaxSize = 1000;
+	public static final int defaultCacheMaxSize = 1000;
 	public static final float cacheLoadFactor = 0.75f;
 	private static Logger log = VideoEngine.log;
 	private static TextureCache instance = null;
 	private LinkedHashMap<Integer, Texture> cache;
-	public CacheStatistics statistics = new CacheStatistics("Texture", cacheMaxSize);
+	private int cacheMaxSize;
+	public CacheStatistics statistics;
 	// Remember which textures have already been hashed during one display
 	// (for applications reusing the same texture multiple times in one display)
 	private Set<Integer> textureAlreadyHashed;
@@ -60,6 +62,11 @@ public class TextureCache {
 		// - initial size large enough so that no rehash will occur
 		// - the LinkedList is based on access-order for LRU
 		//
+		cacheMaxSize = Settings.getInstance().readInt("emu.graphics.textureCache.maxSize", defaultCacheMaxSize);
+		if (cacheMaxSize <= 0) {
+			cacheMaxSize = defaultCacheMaxSize;
+		}
+		statistics = new CacheStatistics("Texture", cacheMaxSize);
 		cache = new LinkedHashMap<Integer, Texture>((int) (cacheMaxSize / cacheLoadFactor) + 1, cacheLoadFactor, true);
 		textureAlreadyHashed = new HashSet<Integer>();
 	}

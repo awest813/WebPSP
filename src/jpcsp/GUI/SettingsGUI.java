@@ -16,20 +16,38 @@
  */
 package jpcsp.GUI;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.DisplayMode;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.MutableComboBoxModel;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingConstants;
 
 import jpcsp.Emulator;
 import jpcsp.MainGUI;
@@ -68,6 +86,8 @@ public class SettingsGUI extends javax.swing.JFrame {
 
         setAllComponentsFromSettings();
 
+        addPerformanceProfilesTab();
+
         lbUMDPaths.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
@@ -78,6 +98,185 @@ public class SettingsGUI extends javax.swing.JFrame {
         });
 
         WindowPropSaver.loadWindowProperties(this);
+    }
+
+    private void addPerformanceProfilesTab() {
+        JPanel perfPanel = new JPanel();
+        perfPanel.setLayout(new BoxLayout(perfPanel, BoxLayout.Y_AXIS));
+        perfPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // Description header
+        JLabel headerLabel = new JLabel("<html><b>Performance Profiles</b><br>"
+            + "Select a preset to quickly configure the emulator for your PC's RAM.<br>"
+            + "Individual settings can still be fine-tuned on the other tabs.<br>"
+            + "<i>Cache size changes take effect after restarting the emulator.</i></html>");
+        headerLabel.setAlignmentX(JLabel.LEFT_ALIGNMENT);
+        perfPanel.add(headerLabel);
+        perfPanel.add(Box.createVerticalStrut(12));
+
+        // Preset buttons panel
+        JPanel presetsPanel = new JPanel(new GridBagLayout());
+        presetsPanel.setBorder(BorderFactory.createTitledBorder("Quick Presets"));
+        presetsPanel.setAlignmentX(JPanel.LEFT_ALIGNMENT);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(4, 4, 4, 4);
+
+        // Column headers
+        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0.3;
+        presetsPanel.add(makeBoldLabel("Preset"), gbc);
+        gbc.gridx = 1; gbc.weightx = 0.2;
+        presetsPanel.add(makeBoldLabel("Tex Cache"), gbc);
+        gbc.gridx = 2; gbc.weightx = 0.2;
+        presetsPanel.add(makeBoldLabel("Vtx Cache"), gbc);
+        gbc.gridx = 3; gbc.weightx = 0.3;
+        presetsPanel.add(makeBoldLabel("Notes"), gbc);
+
+        // Minimum preset
+        addPresetRow(presetsPanel, gbc, 1, "Minimum (1 GB RAM)", 100, 5000,
+            "No shaders, 30 FPS limit", Color.decode("#fff0f0"));
+
+        // Low preset
+        addPresetRow(presetsPanel, gbc, 2, "Low (2 GB RAM)", 250, 10000,
+            "No shaders, no FPS limit", Color.decode("#fff8ec"));
+
+        // Balanced preset (default)
+        addPresetRow(presetsPanel, gbc, 3, "Balanced (default)", 1000, 30000,
+            "Shaders optional, no FPS limit", Color.decode("#f0fff0"));
+
+        // High preset
+        addPresetRow(presetsPanel, gbc, 4, "High (4+ GB RAM)", 2000, 60000,
+            "All features, large caches", Color.decode("#f0f0ff"));
+
+        perfPanel.add(presetsPanel);
+        perfPanel.add(Box.createVerticalStrut(12));
+
+        // Manual cache size controls
+        JPanel cacheSizePanel = new JPanel(new GridBagLayout());
+        cacheSizePanel.setBorder(BorderFactory.createTitledBorder("Manual Cache Sizes (restart required)"));
+        cacheSizePanel.setAlignmentX(JPanel.LEFT_ALIGNMENT);
+        GridBagConstraints c = new GridBagConstraints();
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.insets = new Insets(3, 5, 3, 5);
+
+        c.gridx = 0; c.gridy = 0; c.weightx = 0;
+        cacheSizePanel.add(new JLabel("Texture cache size:"), c);
+        c.gridx = 1; c.weightx = 1;
+        final JSpinner texCacheSpinner = new JSpinner(new SpinnerNumberModel(
+            settings.readInt("emu.graphics.textureCache.maxSize", 1000), 50, 5000, 50));
+        texCacheSpinner.setToolTipText("Max textures held in GPU memory (50-5000). Lower = less VRAM.");
+        cacheSizePanel.add(texCacheSpinner, c);
+        c.gridx = 2; c.weightx = 0;
+        cacheSizePanel.add(new JLabel(" textures"), c);
+
+        c.gridx = 0; c.gridy = 1; c.weightx = 0;
+        cacheSizePanel.add(new JLabel("Vertex cache size:"), c);
+        c.gridx = 1; c.weightx = 1;
+        final JSpinner vtxCacheSpinner = new JSpinner(new SpinnerNumberModel(
+            settings.readInt("emu.graphics.vertexCache.maxSize", 30000), 1000, 100000, 1000));
+        vtxCacheSpinner.setToolTipText("Max vertex buffers cached (1000-100000). Lower = less RAM.");
+        cacheSizePanel.add(vtxCacheSpinner, c);
+        c.gridx = 2; c.weightx = 0;
+        cacheSizePanel.add(new JLabel(" vertices"), c);
+
+        c.gridx = 0; c.gridy = 2; c.gridwidth = 3; c.weightx = 1;
+        JButton applyBtn = new JButton("Apply Cache Sizes");
+        applyBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int texSize = (Integer) texCacheSpinner.getValue();
+                int vtxSize = (Integer) vtxCacheSpinner.getValue();
+                settings.writeInt("emu.graphics.textureCache.maxSize", texSize);
+                settings.writeInt("emu.graphics.vertexCache.maxSize", vtxSize);
+                JpcspDialogManager.showInformation(null,
+                    "Cache sizes saved. Restart the emulator for changes to take effect.");
+            }
+        });
+        cacheSizePanel.add(applyBtn, c);
+
+        perfPanel.add(cacheSizePanel);
+        perfPanel.add(Box.createVerticalGlue());
+
+        jTabbedPane1.addTab("Performance", perfPanel);
+    }
+
+    private JLabel makeBoldLabel(String text) {
+        JLabel lbl = new JLabel(text);
+        lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
+        return lbl;
+    }
+
+    private void addPresetRow(JPanel panel, GridBagConstraints gbc, int row,
+            String name, int texCache, int vtxCache, String notes, Color bg) {
+        final int finalTexCache = texCache;
+        final int finalVtxCache = vtxCache;
+        final String finalName = name.contains("(") ? name.substring(0, name.indexOf("(")).trim() : name;
+
+        gbc.gridy = row;
+        gbc.gridx = 0;
+        JButton btn = new JButton(name);
+        btn.setBackground(bg);
+        btn.setOpaque(true);
+        btn.setToolTipText("Apply " + name + " preset");
+        btn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                applyPreset(finalName, finalTexCache, finalVtxCache);
+            }
+        });
+        panel.add(btn, gbc);
+
+        gbc.gridx = 1;
+        JLabel texLabel = new JLabel(String.valueOf(texCache), SwingConstants.CENTER);
+        panel.add(texLabel, gbc);
+
+        gbc.gridx = 2;
+        JLabel vtxLabel = new JLabel(String.valueOf(vtxCache), SwingConstants.CENTER);
+        panel.add(vtxLabel, gbc);
+
+        gbc.gridx = 3;
+        JLabel notesLabel = new JLabel(notes);
+        notesLabel.setForeground(Color.DARK_GRAY);
+        panel.add(notesLabel, gbc);
+    }
+
+    private void applyPreset(String profileName, int texCacheSize, int vtxCacheSize) {
+        settings.writeInt("emu.graphics.textureCache.maxSize", texCacheSize);
+        settings.writeInt("emu.graphics.vertexCache.maxSize", vtxCacheSize);
+        settings.writeString("emu.performanceProfile", profileName);
+
+        boolean enableShaders = texCacheSize >= 1000;
+        boolean enableVAO = texCacheSize >= 1000;
+        boolean limitFPS = texCacheSize < 200;
+
+        settings.writeBool("emu.useshaders", enableShaders);
+        settings.writeBool("emu.useGeometryShader", enableShaders);
+        settings.writeBool("emu.enabledynamicshaders", enableShaders);
+        settings.writeBool("emu.enablevao", enableVAO);
+        settings.writeBool("emu.disableubo", !enableVAO);
+        settings.writeBool("emu.useVertexCache", true);
+
+        if (limitFPS) {
+            jpcsp.HLE.Modules.sceDisplayModule.setDesiredFPS(30);
+            settings.writeInt("emu.graphics.frameskip.desiredFPS", 30);
+        } else {
+            jpcsp.HLE.Modules.sceDisplayModule.setDesiredFPS(0);
+            settings.writeInt("emu.graphics.frameskip.desiredFPS", 0);
+        }
+
+        // Reflect shader changes in the Video tab checkboxes
+        setBoolFromSettings(shadersCheck, "emu.useshaders");
+        setBoolFromSettings(geometryShaderCheck, "emu.useGeometryShader");
+        setBoolFromSettings(enableDynamicShadersCheck, "emu.enabledynamicshaders");
+        setBoolFromSettings(enableVAOCheck, "emu.enablevao");
+        setBoolFromSettings(disableUBOCheck, "emu.disableubo");
+
+        JpcspDialogManager.showInformation(this,
+            "<html><b>" + profileName + " profile applied.</b><br><br>" +
+            "Texture cache: " + texCacheSize + " | Vertex cache: " + vtxCacheSize + "<br>" +
+            "Shaders: " + (enableShaders ? "enabled" : "disabled") + "<br>" +
+            (limitFPS ? "Frame limit: 30 FPS<br>" : "") +
+            "<br><i>Cache size changes take effect after restarting the emulator.</i></html>");
     }
 
     private void updateSysconLabel() {

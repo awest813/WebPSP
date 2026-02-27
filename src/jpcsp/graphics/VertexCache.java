@@ -23,15 +23,17 @@ import java.util.Map;
 import java.util.Set;
 
 import jpcsp.graphics.RE.IRenderingEngine;
+import jpcsp.settings.Settings;
 import jpcsp.util.CacheStatistics;
 import jpcsp.util.DurationStatistics;
 
 public class VertexCache {
-	public static final int cacheMaxSize = 30000;
+	public static final int defaultCacheMaxSize = 30000;
 	public static final float cacheLoadFactor = 0.75f;
 	protected static VertexCache instance = null;
 	private LinkedHashMap<Integer, VertexInfo> cache;
-	protected CacheStatistics statistics = new CacheStatistics("Vertex", cacheMaxSize);
+	protected int cacheMaxSize;
+	protected CacheStatistics statistics;
 	// Remember which vertex have already been checked during one display
 	// (for applications reusing the same vertex multiple times in one display)
 	private Set<Integer> vertexAlreadyChecked;
@@ -50,6 +52,11 @@ public class VertexCache {
 		// - initial size large enough so that no rehash will occur
 		// - the LinkedList is based on access-order for LRU
 		//
+		cacheMaxSize = Settings.getInstance().readInt("emu.graphics.vertexCache.maxSize", defaultCacheMaxSize);
+		if (cacheMaxSize <= 0) {
+			cacheMaxSize = defaultCacheMaxSize;
+		}
+		statistics = new CacheStatistics("Vertex", cacheMaxSize);
 		cache = new LinkedHashMap<Integer, VertexInfo>((int) (cacheMaxSize / cacheLoadFactor) + 1, cacheLoadFactor, true);
 		vertexAlreadyChecked = new HashSet<Integer>();
 	}
