@@ -1238,7 +1238,6 @@ public class UmdVideoPlayer implements KeyListener {
 	    		}
 
 	    		abgr = resize(abgr, size);
-	    		// TODO How to find out if we have a YUVJ image?
 	    		// H264Utils.YUVJ2YUV(luma, luma, size);
 	    		H264Utils.YUV2ARGB(width, height, luma, cb, cr, abgr);
 	    		image = display.createImage(new MemoryImageSource(videoWidth, videoHeight, abgr, 0, width));

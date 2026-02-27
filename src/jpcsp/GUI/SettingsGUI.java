@@ -19,34 +19,34 @@ package jpcsp.GUI;
 import java.awt.DisplayMode;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
+import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListModel;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JRadioButton;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
 import javax.swing.MutableComboBoxModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+
+import com.jidesoft.swing.FolderChooser;
 
 import jpcsp.Emulator;
 import jpcsp.MainGUI;
+import jpcsp.WindowPropSaver;
 import jpcsp.HLE.Modules;
 import jpcsp.HLE.modules.sceUtility;
 import jpcsp.hardware.Model;
 import jpcsp.memory.mmio.syscon.SysconEmulator;
 import jpcsp.network.BaseNetworkAdapter;
 import jpcsp.settings.Settings;
-
-import com.jidesoft.swing.FolderChooser;
-import java.io.File;
-import javax.swing.DefaultListModel;
-import javax.swing.ListSelectionModel;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import jpcsp.WindowPropSaver;
 import jpcsp.util.JpcspDialogManager;
 
 /**
@@ -82,11 +82,11 @@ public class SettingsGUI extends javax.swing.JFrame {
 
     private void updateSysconLabel() {
         if (SysconEmulator.isEnabled() && Modules.rebootModule.isAvailable()) {
-        	sysconLabel.setVisible(true);
+		sysconLabel.setVisible(true);
             java.util.ResourceBundle bundle = java.util.ResourceBundle.getBundle("jpcsp/languages/jpcsp");
             sysconLabel.setText(String.format(bundle.getString("SettingsGUI.sysconLabel.text"), SysconEmulator.getFirmwareFileName()));
         } else {
-        	sysconLabel.setVisible(false);
+		sysconLabel.setVisible(false);
         }
     }
 
@@ -193,12 +193,12 @@ public class SettingsGUI extends javax.swing.JFrame {
         checkBox.setEnabled(isEnabledSettings(settingsOption));
     }
 
-    private void setIntFromSettings(JComboBox comboBox, String settingsOption) {
+    private void setIntFromSettings(JComboBox<?> comboBox, String settingsOption) {
         comboBox.setSelectedIndex(settings.readInt(settingsOption));
         comboBox.setEnabled(isEnabledSettings(settingsOption));
     }
 
-    private void setIntAsStringFromSettings(JComboBox comboBox, String settingsOption, int defaultValue) {
+    private void setIntAsStringFromSettings(JComboBox<?> comboBox, String settingsOption, int defaultValue) {
         comboBox.setSelectedItem(Integer.toString(settings.readInt(settingsOption, defaultValue)));
         comboBox.setEnabled(isEnabledSettings(settingsOption));
     }
@@ -208,7 +208,7 @@ public class SettingsGUI extends javax.swing.JFrame {
         spinner.setEnabled(isEnabledSettings(settingsOption));
     }
 
-    private void setStringFromSettings(JComboBox comboBox, String settingsOption) {
+    private void setStringFromSettings(JComboBox<?> comboBox, String settingsOption) {
         comboBox.setSelectedItem(settings.readString(settingsOption));
         comboBox.setEnabled(isEnabledSettings(settingsOption));
     }
@@ -281,10 +281,10 @@ public class SettingsGUI extends javax.swing.JFrame {
         setBoolToSettings(enableChatCheck, BaseNetworkAdapter.settingsEnableChat);
 
         // special handling for UMD paths
-        DefaultListModel dlm = (DefaultListModel) lbUMDPaths.getModel();
-        settings.writeString("emu.umdpath", (String) dlm.getElementAt(0));
+        DefaultListModel<String> dlm = (DefaultListModel<String>) lbUMDPaths.getModel();
+        settings.writeString("emu.umdpath", dlm.getElementAt(0));
         for (int i = 1; i < dlm.getSize(); i++) {
-            settings.writeString(String.format("emu.umdpath.%d", i), (String) dlm.getElementAt(i));
+            settings.writeString(String.format("emu.umdpath.%d", i), dlm.getElementAt(i));
         }
 
         // clean excess elements
@@ -311,13 +311,13 @@ public class SettingsGUI extends javax.swing.JFrame {
         }
     }
 
-    private void setIntToSettings(JComboBox comboBox, String settingsOption) {
+    private void setIntToSettings(JComboBox<?> comboBox, String settingsOption) {
         if (isEnabledSettings(settingsOption)) {
             settings.writeInt(settingsOption, comboBox.getSelectedIndex());
         }
     }
 
-    private void setIntAsStringToSettings(JComboBox comboBox, String settingsOption, int defaultValue) {
+    private void setIntAsStringToSettings(JComboBox<?> comboBox, String settingsOption, int defaultValue) {
         if (isEnabledSettings(settingsOption)) {
             settings.writeInt(settingsOption, Integer.parseInt(comboBox.getSelectedItem().toString()));
         }
@@ -329,7 +329,7 @@ public class SettingsGUI extends javax.swing.JFrame {
         }
     }
 
-    private void setStringToSettings(JComboBox comboBox, String settingsOption) {
+    private void setStringToSettings(JComboBox<?> comboBox, String settingsOption) {
         if (isEnabledSettings(settingsOption)) {
             settings.writeString(settingsOption, comboBox.getSelectedItem().toString());
         }
@@ -412,16 +412,16 @@ public class SettingsGUI extends javax.swing.JFrame {
     }
 
     public static String[] getModelNames() {
-    	return new String[] {
-    			Model.getModelName(Model.MODEL_PSP_FAT),
-    			Model.getModelName(Model.MODEL_PSP_SLIM),
-    			Model.getModelName(Model.MODEL_PSP_BRITE),
-    			Model.getModelName(Model.MODEL_PSP_BRITE2),
-    			Model.getModelName(Model.MODEL_PSP_GO),
-    			Model.getModelName(Model.MODEL_PSP_BRITE3),
-    			Model.getModelName(Model.MODEL_PSP_BRITE4),
-    			Model.getModelName(Model.MODEL_PSP_STREET)
-    	};
+	return new String[] {
+			Model.getModelName(Model.MODEL_PSP_FAT),
+			Model.getModelName(Model.MODEL_PSP_SLIM),
+			Model.getModelName(Model.MODEL_PSP_BRITE),
+			Model.getModelName(Model.MODEL_PSP_BRITE2),
+			Model.getModelName(Model.MODEL_PSP_GO),
+			Model.getModelName(Model.MODEL_PSP_BRITE3),
+			Model.getModelName(Model.MODEL_PSP_BRITE4),
+			Model.getModelName(Model.MODEL_PSP_STREET)
+	};
     }
 
     private ComboBoxModel<String> makeResolutions() {
@@ -1405,12 +1405,11 @@ public class SettingsGUI extends javax.swing.JFrame {
     }//GEN-LAST:event_btnUMDPathAddActionPerformed
 
     private void btnUMDPathRemoveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnUMDPathRemoveActionPerformed
-        DefaultListModel dlm = (DefaultListModel) lbUMDPaths.getModel();
+        DefaultListModel<String> dlm = (DefaultListModel<String>) lbUMDPaths.getModel();
         dlm.remove(lbUMDPaths.getSelectedIndex());
     }//GEN-LAST:event_btnUMDPathRemoveActionPerformed
 
     private void XlinkaiSupportRadioButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_XlinkaiSupportRadioButtonActionPerformed
-        // TODO add your handling code here:
     }//GEN-LAST:event_XlinkaiSupportRadioButtonActionPerformed
 
     @Override
