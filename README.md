@@ -25,7 +25,7 @@ architecture. Even a quad-core can give a small performance improvement by leavi
 free CPU cores for the Java JIT Compiler and the graphics cache.
 
 NVIDIA graphic cards are fully supported and Jpcsp can take advantage of powerful GPUs.
-Problems have been reported with ATI/AMD graphic cards: keep you Catalyst driver
+Problems have been reported with ATI/AMD graphic cards: keep your Catalyst driver
 up-to-date as new releases might fix issues.
 
 The project is still a beta release, but currently more than 600 games are already
@@ -41,7 +41,7 @@ links at the bottom of this FAQ.
 
 In this FAQ we intend to explain the multiple functionalities and
 architecture of this emulator, as well as list all the needed information to
-clarify any possible doubts about it's usage.
+clarify any possible doubts about its usage.
 
 Please keep in mind that JPCSP does not support or endorse piracy.
 
