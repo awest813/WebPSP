@@ -23,6 +23,24 @@ public enum PerformanceProfile {
     LOW_SPEC,
     CHROMEBOOK;
 
+    public String getSettingsValue() {
+        return name();
+    }
+
+    public static PerformanceProfile fromSettingsValue(String value) {
+        if (value == null || value.length() <= 0) {
+            return null;
+        }
+
+        for (PerformanceProfile profile : values()) {
+            if (profile.name().equalsIgnoreCase(value)) {
+                return profile;
+            }
+        }
+
+        return null;
+    }
+
     public void apply(Settings settings) {
         switch (this) {
             case LOW_SPEC:

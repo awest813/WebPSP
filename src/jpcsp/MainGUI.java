@@ -101,6 +101,7 @@ import jpcsp.memory.mmio.umd.MMIOHandlerUmd;
 import jpcsp.network.AutoDetectLocalIPAddress;
 import jpcsp.network.proonline.ProOnlineNetworkAdapter;
 import jpcsp.remote.HTTPServer;
+import jpcsp.settings.PerformanceProfile;
 import jpcsp.settings.Settings;
 import jpcsp.util.FileUtil;
 import jpcsp.util.JpcspDialogManager;
@@ -181,6 +182,8 @@ public class MainGUI extends javax.swing.JFrame implements KeyListener, Componen
     private boolean doUmdBuffering = false;
     private boolean runFromVsh = false;
     private String stateFileName = null;
+    private static final String performanceProfileInitializedOption = "emu.performanceProfile.initialized";
+    private static final String performanceProfileSelectionOption = "emu.performanceProfile.selection";
 
     @Override
     public DisplayMode getDisplayMode() {
@@ -217,6 +220,8 @@ public class MainGUI extends javax.swing.JFrame implements KeyListener, Componen
         // next two lines are for overlay menus over joglcanvas
         JPopupMenu.setDefaultLightWeightPopupEnabled(false);
         ToolTipManager.sharedInstance().setLightWeightPopupEnabled(false);
+
+        maybeApplyPerformanceProfileOnFirstRun();
 
         useFullscreen = Settings.getInstance().readBool("gui.fullscreen");
         if (useFullscreen && !isDisplayable()) {
@@ -291,6 +296,45 @@ public class MainGUI extends javax.swing.JFrame implements KeyListener, Componen
         } catch (Throwable t) {
             t.printStackTrace();
         }
+    }
+
+    private void maybeApplyPerformanceProfileOnFirstRun() {
+        if (GraphicsEnvironment.isHeadless()) {
+            return;
+        }
+
+        Settings settings = Settings.getInstance();
+        if (settings.hasProperty(performanceProfileInitializedOption)) {
+            return;
+        }
+
+        Object[] options = new Object[] { "Default", "Low-Spec", "Chromebook" };
+        int selectedProfile = JOptionPane.showOptionDialog(
+                null,
+                "Choose a performance preset for this device.\n"
+                        + "You can change this later in settings.",
+                "Choose Performance Profile",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]);
+
+        PerformanceProfile performanceProfile = null;
+        if (selectedProfile == 1) {
+            performanceProfile = PerformanceProfile.LOW_SPEC;
+        } else if (selectedProfile == 2) {
+            performanceProfile = PerformanceProfile.CHROMEBOOK;
+        }
+
+        if (performanceProfile != null) {
+            settings.applyPerformanceProfile(performanceProfile);
+            settings.writeString(performanceProfileSelectionOption, performanceProfile.getSettingsValue());
+        } else {
+            settings.writeString(performanceProfileSelectionOption, "DEFAULT");
+        }
+
+        settings.writeBool(performanceProfileInitializedOption, true);
     }
 
     private Dimension getDimensionFromDisplay(int width, int height) {

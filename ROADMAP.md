@@ -19,7 +19,7 @@ This roadmap proposes practical, incremental changes to modernize Jpcsp with a f
 **Status:** In progress (started with profile scaffolding in code).
 
 - [x] Add baseline low-spec/chromebook performance profile definitions in `jpcsp.settings`.
-- [ ] Wire profile selection into the settings UI / first-run flow.
+- [x] Wire profile selection into the settings UI / first-run flow (first-run flow implemented).
 - [ ] Add dynamic frame skip with frame-time budget targeting.
 
 ### Performance and compatibility
