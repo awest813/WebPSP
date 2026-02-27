@@ -72,14 +72,18 @@ public class Settings {
         listenersByKey = new HashMap<String, List<ISettingsListener>>();
         allListeners = new LinkedList<SettingsListenerInfo>();
         defaultSettings = new Properties();
+        loadedSettings = new SortedProperties(defaultSettings);
         patchSettings = new Properties();
         directoryMapping = new HashMap<String, String>();
         InputStream defaultSettingsStream = null;
         InputStream loadedSettingsStream = null;
         try {
             defaultSettingsStream = getClass().getResourceAsStream(DEFAULT_SETTINGS_FILE_NAME);
-            defaultSettings.load(defaultSettingsStream);
-            loadedSettings = new SortedProperties(defaultSettings);
+            if (defaultSettingsStream != null) {
+                defaultSettings.load(defaultSettingsStream);
+            } else {
+                Emulator.log.warn(String.format("Default settings file not found: %s", DEFAULT_SETTINGS_FILE_NAME));
+            }
             File settingsFile = new File(SETTINGS_FILE_NAME);
             settingsFile.createNewFile();
             loadedSettingsStream = new BufferedInputStream(new FileInputStream(settingsFile));
