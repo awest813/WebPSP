@@ -16,6 +16,12 @@ This roadmap proposes practical, incremental changes to modernize Jpcsp with a f
 
 ## Phase 1 (0-3 months): Low-risk wins
 
+**Status:** In progress (started with profile scaffolding in code).
+
+- [x] Add baseline low-spec/chromebook performance profile definitions in `jpcsp.settings`.
+- [ ] Wire profile selection into the settings UI / first-run flow.
+- [ ] Add dynamic frame skip with frame-time budget targeting.
+
 ### Performance and compatibility
 - Add a **"Low-Spec" preset** that automatically selects:
   - native PSP resolution,

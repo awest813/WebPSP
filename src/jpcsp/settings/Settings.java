@@ -389,6 +389,14 @@ public class Settings {
         writeSettings();
     }
 
+    public void applyPerformanceProfile(PerformanceProfile profile) {
+        if (profile == null) {
+            return;
+        }
+
+        profile.apply(this);
+    }
+
     public float readFloat(String option, float defaultValue) {
         String value = getProperty(option);
         if (value == null) {
