@@ -16,11 +16,12 @@ This roadmap proposes practical, incremental changes to modernize Jpcsp with a f
 
 ## Phase 1 (0-3 months): Low-risk wins
 
-**Status:** In progress (started with profile scaffolding in code).
+**Status:** In progress.
 
 - [x] Add baseline low-spec/chromebook performance profile definitions in `jpcsp.settings`.
 - [x] Wire profile selection into the settings UI / first-run flow (first-run flow implemented).
-- [ ] Add dynamic frame skip with frame-time budget targeting.
+- [x] Add dynamic frame skip with frame-time budget targeting (`emu.graphics.frameskip.dynamic`
+      setting; reacts per-frame to render-time spikes instead of using a 1-second FPS average).
 
 ### Performance and compatibility
 - Add a **"Low-Spec" preset** that automatically selects:
@@ -28,7 +29,8 @@ This roadmap proposes practical, incremental changes to modernize Jpcsp with a f
   - conservative post-processing,
   - shader simplification,
   - reduced texture cache memory.
-- Add **dynamic frame skip** with frame-time budget targeting (instead of static skip).
+- ~~Add **dynamic frame skip** with frame-time budget targeting (instead of static skip).~~ ✅ Done –
+  enable with `emu.graphics.frameskip.dynamic=true` alongside a desired-FPS limit.
 - Implement **GPU capability probing** at startup to auto-disable expensive features on weak iGPUs.
 - Add a **lightweight software rendering fallback profile** tuned for very old or unsupported OpenGL stacks.
 

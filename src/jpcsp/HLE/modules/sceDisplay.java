@@ -494,6 +494,9 @@ public class sceDisplay extends HLEModule {
     private int framesSkippedInSequence;
     private LinkedList<Long> frameTimestamps = new LinkedList<Long>();
     private boolean skipNextFrameBufferSwitch;
+    // Dynamic frame-time budget targeting
+    private boolean dynamicFrameSkip = false;
+    private long lastFrameWallTimeNs = 0L;
     // Mpeg audio hack
     private int framePerSecFactor;
     // Display actions
@@ -518,6 +521,15 @@ public class sceDisplay extends HLEModule {
         @Override
         protected void settingsValueChanged(boolean value) {
             setSaveStencilToMemory(value);
+        }
+    }
+
+    private class DynamicFrameSkipSettingsListener extends AbstractBoolSettingsListener {
+
+        @Override
+        protected void settingsValueChanged(boolean value) {
+            dynamicFrameSkip = value;
+            lastFrameWallTimeNs = 0L;
         }
     }
 
@@ -701,6 +713,7 @@ public class sceDisplay extends HLEModule {
         setSettingsListener("emu.enabledynamicshaders", displaySettingsListener);
         setSettingsListener("emu.enableshaderstenciltest", displaySettingsListener);
         setSettingsListener("emu.enableshadercolormask", displaySettingsListener);
+        setSettingsListener("emu.graphics.frameskip.dynamic", new DynamicFrameSkipSettingsListener());
 
     	displayScreen = new DisplayScreen();
 
@@ -757,10 +770,20 @@ public class sceDisplay extends HLEModule {
 
     public void setDesiredFPS(int desiredFPS) {
         this.desiredFps = desiredFPS;
+        lastFrameWallTimeNs = 0L;
     }
 
     public int getDesiredFPS() {
         return desiredFps;
+    }
+
+    public void setDynamicFrameSkip(boolean enabled) {
+        this.dynamicFrameSkip = enabled;
+        lastFrameWallTimeNs = 0L;
+    }
+
+    public boolean isDynamicFrameSkip() {
+        return dynamicFrameSkip;
     }
 
     public final void setScreenResolution(int width, int height) {
@@ -1948,22 +1971,39 @@ public class sceDisplay extends HLEModule {
         }
 
         boolean skipThisFrame = false;
-        if (desiredFps > 0) {
-            // Remember the time stamps of the frames displayed during the last second.
-            long currentFrameTimestamp = Emulator.getClock().currentTimeMillis();
-            frameTimestamps.addLast(currentFrameTimestamp);
-            // Remove the time stamps older than 1 second
-            while (currentFrameTimestamp - frameTimestamps.getFirst().longValue() > 1000L) {
-                frameTimestamps.removeFirst();
-            }
+        final int fps = desiredFps;
+        if (fps > 0) {
+            if (dynamicFrameSkip) {
+                // Dynamic frame-time budget targeting: skip the next frame if the
+                // previous frame exceeded the per-frame time budget.  This reacts
+                // to individual frame spikes rather than using a 1-second FPS average.
+                long nowNs = System.nanoTime();
+                if (lastFrameWallTimeNs != 0L) {
+                    long elapsedNs = nowNs - lastFrameWallTimeNs;
+                    long budgetNs = 1_000_000_000L / fps;
+                    if (elapsedNs > budgetNs && framesSkippedInSequence < maxFramesSkippedInSequence) {
+                        skipThisFrame = true;
+                    }
+                }
+                lastFrameWallTimeNs = nowNs;
+            } else {
+                // Static FPS-based frame skip: compare the rolling 1-second FPS
+                // against the desired target and skip if we are running too slowly.
+                long currentFrameTimestamp = Emulator.getClock().currentTimeMillis();
+                frameTimestamps.addLast(currentFrameTimestamp);
+                // Remove the time stamps older than 1 second
+                while (currentFrameTimestamp - frameTimestamps.getFirst().longValue() > 1000L) {
+                    frameTimestamps.removeFirst();
+                }
 
-            // The current FPS is the number of frames displayed during the last second.
-            int currentFps = frameTimestamps.size();
+                // The current FPS is the number of frames displayed during the last second.
+                int currentFps = frameTimestamps.size();
 
-            // Skip the rendering of the next frame if we are below the desired FPS
-            // and if we have not already skipped too many frames since the last rendering.
-            if (currentFps < desiredFps && framesSkippedInSequence < maxFramesSkippedInSequence) {
-                skipThisFrame = true;
+                // Skip the rendering of the next frame if we are below the desired FPS
+                // and if we have not already skipped too many frames since the last rendering.
+                if (currentFps < fps && framesSkippedInSequence < maxFramesSkippedInSequence) {
+                    skipThisFrame = true;
+                }
             }
         }
         VideoEngine.getInstance().setSkipThisFrame(skipThisFrame);
