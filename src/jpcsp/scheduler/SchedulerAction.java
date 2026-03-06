@@ -18,7 +18,7 @@ package jpcsp.scheduler;
 
 import jpcsp.HLE.kernel.types.IAction;
 
-public class SchedulerAction {
+public class SchedulerAction implements Comparable<SchedulerAction> {
 	private long schedule;
 	private IAction action;
 
@@ -41,6 +41,11 @@ public class SchedulerAction {
 
 	public void setAction(IAction action) {
 		this.action = action;
+	}
+
+	@Override
+	public int compareTo(SchedulerAction other) {
+		return Long.compare(this.schedule, other.schedule);
 	}
 
 	@Override

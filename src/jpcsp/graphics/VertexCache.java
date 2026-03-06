@@ -60,20 +60,23 @@ public class VertexCache {
 		}
 	}
 
-	private static Integer getKey(VertexInfo vertexInfo) {
-		return Integer.valueOf(vertexInfo.ptr_vertex + vertexInfo.ptr_index);
+	// Compute key as primitive int to minimize autoboxing overhead.
+	// Autoboxing to Integer still occurs at map boundaries, but this avoids
+	// creating intermediate Integer objects when the key is passed around.
+	private static int getKey(VertexInfo vertexInfo) {
+		return vertexInfo.ptr_vertex + vertexInfo.ptr_index;
 	}
 
 	public boolean hasVertex(VertexInfo vertexInfo) {
 		return cache.containsKey(getKey(vertexInfo));
 	}
 
-	protected synchronized VertexInfo getVertex(VertexInfo vertexInfo) {
-		return cache.get(getKey(vertexInfo));
+	protected synchronized VertexInfo getVertex(int key) {
+		return cache.get(key);
 	}
 
 	public synchronized void addVertex(IRenderingEngine re, VertexInfo vertexInfo, int numberOfVertex, float[][] boneMatrix, int numberOfWeightsForShader) {
-		Integer key = getKey(vertexInfo);
+		int key = getKey(vertexInfo);
 		VertexInfo previousVertex = cache.get(key);
 		if (previousVertex != null) {
 		    vertexInfo.reuseCachedBuffer(previousVertex);
@@ -103,7 +106,9 @@ public class VertexCache {
 
 	public VertexInfo getVertex(VertexInfo vertexInfo, int numberOfVertex, float[][] boneMatrix, int numberOfWeightsForShader) {
 		statistics.totalHits++;
-		VertexInfo vertex = getVertex(vertexInfo);
+		// Compute key once and reuse to avoid redundant autoboxing
+		int key = getKey(vertexInfo);
+		VertexInfo vertex = getVertex(key);
 
 		if (vertex == null) {
 			statistics.notPresentHits++;

@@ -17,9 +17,7 @@ along with Jpcsp.  If not, see <http://www.gnu.org/licenses/>.
 package jpcsp.scheduler;
 
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.PriorityQueue;
 
 import jpcsp.Emulator;
 import jpcsp.Allegrex.compiler.RuntimeContext;
@@ -27,8 +25,8 @@ import jpcsp.HLE.kernel.types.IAction;
 
 public class Scheduler {
 	private static Scheduler instance = null;
-	private final List<SchedulerAction> actions;
-	private SchedulerAction nextAction;
+	// PriorityQueue provides O(log n) insert and O(log n) poll vs O(n) scans with LinkedList
+	private final PriorityQueue<SchedulerAction> actions;
 
 	public static Scheduler getInstance() {
 		if (instance == null) {
@@ -39,17 +37,16 @@ public class Scheduler {
 	}
 
 	private Scheduler() {
-		actions = new LinkedList<SchedulerAction>();
+		actions = new PriorityQueue<SchedulerAction>();
 	}
 
 	public synchronized void reset() {
 		actions.clear();
-		nextAction = null;
 	}
 
 	public void step() {
 		synchronized (this) {
-			if (nextAction == null) {
+			if (actions.isEmpty()) {
 				return;
 			}
 		}
@@ -65,6 +62,7 @@ public class Scheduler {
 	}
 
 	public synchronized long getNextActionDelay(long noActionDelay) {
+		SchedulerAction nextAction = actions.peek();
 		if (nextAction == null) {
 			return noActionDelay;
 		}
@@ -74,8 +72,12 @@ public class Scheduler {
 	}
 
 	private void addSchedulerAction(SchedulerAction schedulerAction) {
+		// O(log n) insertion into priority queue
+		SchedulerAction previousHead = actions.peek();
 		actions.add(schedulerAction);
-		if (updateNextAction(schedulerAction)) {
+		// Notify if the new action became the earliest-scheduled action
+		SchedulerAction newHead = actions.peek();
+		if (newHead != previousHead) {
 			RuntimeContext.onNextScheduleModified();
 		}
 	}
@@ -104,47 +106,27 @@ public class Scheduler {
 	}
 
 	public synchronized void removeAction(long schedule, IAction action) {
-		for (ListIterator<SchedulerAction> lit = actions.listIterator(); lit.hasNext(); ) {
-			SchedulerAction schedulerAction = lit.next();
+		for (Iterator<SchedulerAction> it = actions.iterator(); it.hasNext(); ) {
+			SchedulerAction schedulerAction = it.next();
 			if (schedulerAction.getSchedule() == schedule && schedulerAction.getAction() == action) {
-				lit.remove();
-				updateNextAction();
+				it.remove();
+				// PriorityQueue re-heapifies on remove; no manual updateNextAction needed
+				RuntimeContext.onNextScheduleModified();
 				break;
 			}
 		}
 	}
 
-	private boolean updateNextAction(SchedulerAction schedulerAction) {
-		if (nextAction == null || schedulerAction.getSchedule() < nextAction.getSchedule()) {
-			nextAction = schedulerAction;
-			return true;
-		}
-
-		return false;
-	}
-
-	private void updateNextAction() {
-		nextAction = null;
-
-		for (Iterator<SchedulerAction> it = actions.iterator(); it.hasNext(); ) {
-			SchedulerAction schedulerAction = it.next();
-			updateNextAction(schedulerAction);
-		}
-
-		RuntimeContext.onNextScheduleModified();
-	}
-
 	public synchronized IAction getAction(long now) {
+		SchedulerAction nextAction = actions.peek();
 		if (nextAction == null || now < nextAction.getSchedule()) {
 			return null;
 		}
 
-		IAction action = nextAction.getAction();
+		// O(log n) removal of the minimum element
+		actions.poll();
 
-		actions.remove(nextAction);
-		updateNextAction();
-
-		return action;
+		return nextAction.getAction();
 	}
 
 	public static long getNow() {
