@@ -25,9 +25,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.util.Objects;
 
 public class FileUtil {
     static public String getExtension(File file) {
+        if (file == null) {
+            return "";
+        }
+
         String base = file.getName();
         int index = base.lastIndexOf('.');
         if (index < 0) {
@@ -76,6 +81,12 @@ public class FileUtil {
     }
 
     public static void readAll(InputStream is, byte[] buffer, int offset, int len) throws IOException {
+        Objects.requireNonNull(is, "InputStream cannot be null");
+        Objects.requireNonNull(buffer, "Buffer cannot be null");
+        if (offset < 0 || len < 0 || offset + len > buffer.length) {
+            throw new IndexOutOfBoundsException(String.format("Invalid offset/len combination: offset=%d, len=%d, bufferLength=%d", offset, len, buffer.length));
+        }
+
         int aoffset = offset;
         int remaining = len;
         while (remaining > 0) {
@@ -83,6 +94,8 @@ public class FileUtil {
             if (read > 0) {
                 remaining -= read;
                 aoffset += read;
+            } else if (read < 0) {
+                throw new IOException(String.format("End of stream reached after reading %d of %d bytes", len - remaining, len));
             }
         }
     }
@@ -98,9 +111,17 @@ public class FileUtil {
     }
 
     public static File[] listFilesRecursively(File directory, FileFilter fileFilter) {
+		if (directory == null || !directory.exists() || !directory.isDirectory()) {
+			return new File[0];
+		}
+
     	File[] result = new File[0];
     	File[] paths = directory.listFiles();
-    	for (File path : paths) {
+		if (paths == null || paths.length == 0) {
+			return result;
+		}
+
+     	for (File path : paths) {
     		if (fileFilter == null || fileFilter.accept(path)) {
 				result = Utilities.add(result, path);
 			}
