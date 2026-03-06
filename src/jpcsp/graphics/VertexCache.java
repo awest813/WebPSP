@@ -71,8 +71,8 @@ public class VertexCache {
 		return cache.containsKey(getKey(vertexInfo));
 	}
 
-	protected synchronized VertexInfo getVertex(int key) {
-		return cache.get(key);
+	protected synchronized VertexInfo getVertex(VertexInfo vertexInfo) {
+		return cache.get(getKey(vertexInfo));
 	}
 
 	public synchronized void addVertex(IRenderingEngine re, VertexInfo vertexInfo, int numberOfVertex, float[][] boneMatrix, int numberOfWeightsForShader) {
@@ -106,9 +106,7 @@ public class VertexCache {
 
 	public VertexInfo getVertex(VertexInfo vertexInfo, int numberOfVertex, float[][] boneMatrix, int numberOfWeightsForShader) {
 		statistics.totalHits++;
-		// Compute key once and reuse to avoid redundant autoboxing
-		int key = getKey(vertexInfo);
-		VertexInfo vertex = getVertex(key);
+		VertexInfo vertex = getVertex(vertexInfo);
 
 		if (vertex == null) {
 			statistics.notPresentHits++;

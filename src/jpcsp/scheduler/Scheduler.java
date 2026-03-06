@@ -106,6 +106,9 @@ public class Scheduler {
 	}
 
 	public synchronized void removeAction(long schedule, IAction action) {
+		// O(n) iteration for removal by identity is acceptable here because removeAction
+		// is called infrequently (only for cancellations), while addAction/getAction
+		// (the hot paths) benefit from O(log n) with PriorityQueue.
 		for (Iterator<SchedulerAction> it = actions.iterator(); it.hasNext(); ) {
 			SchedulerAction schedulerAction = it.next();
 			if (schedulerAction.getSchedule() == schedule && schedulerAction.getAction() == action) {
