@@ -245,16 +245,10 @@ public class FastMemory extends Memory {
 
 		int count4 = length >> 2;
 		if (count4 > 0) {
-			if (data == 0) {
-				// Fast memset(addr, 0, length) using copy from "zero" array
-				for (int i = 0; i < count4; i += zero.length) {
-					System.arraycopy(zero, 0, all, (address >> 2) + i, Math.min(zero.length, count4 - i));
-				}
-			} else {
-				int data1 = data & 0xFF;
-				int data4 = (data1 << 24) | (data1 << 16) | (data1 << 8) | data1;
-				Arrays.fill(all, address >> 2, (address >> 2) + count4, data4);
-			}
+			// Arrays.fill is JIT-optimized and handles both zero and non-zero cases efficiently
+			int data1 = data & 0xFF;
+			int data4 = (data1 << 24) | (data1 << 16) | (data1 << 8) | data1;
+			Arrays.fill(all, address >> 2, (address >> 2) + count4, data4);
 			address += count4 << 2;
 			length -= count4 << 2;
 		}

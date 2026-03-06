@@ -30,6 +30,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 import jpcsp.Emulator;
 import jpcsp.Memory;
@@ -100,7 +101,9 @@ public class RuntimeContext {
 	public  static final boolean checkCodeModification = false;
 	private static final boolean invalidateAllCodeBlocks = false;
 	private static final int idleSleepMicros = 1000;
-	private static final Map<Integer, CodeBlock> codeBlocks = Collections.synchronizedMap(new HashMap<Integer, CodeBlock>());
+	// ConcurrentHashMap provides better concurrent read performance than synchronizedMap
+	// and safe weakly-consistent iteration without external synchronization
+	private static final Map<Integer, CodeBlock> codeBlocks = new ConcurrentHashMap<Integer, CodeBlock>();
 	private static int codeBlocksLowestAddress = Integer.MAX_VALUE;
 	private static int codeBlocksHighestAddress = Integer.MIN_VALUE;
 	// A fast lookup array for executables (to improve the performance of the Allegrex instruction jalr)
@@ -109,11 +112,11 @@ public class RuntimeContext {
 	private static CodeBlockList[] fastCodeBlockLookup;
 	private static final int fastCodeBlockLookupShift = 8;
 	private static final int fastCodeBlockSize = 64; // Matching the size used by the Allegrex instruction ICACHE HIT INVALIDATE
-	private static final Map<SceKernelThreadInfo, RuntimeThread> threads = Collections.synchronizedMap(new HashMap<SceKernelThreadInfo, RuntimeThread>());
-	private static final Map<SceKernelThreadInfo, RuntimeThread> toBeStoppedThreads = Collections.synchronizedMap(new HashMap<SceKernelThreadInfo, RuntimeThread>());
-	private static final Map<SceKernelThreadInfo, RuntimeThread> alreadyStoppedThreads = Collections.synchronizedMap(new HashMap<SceKernelThreadInfo, RuntimeThread>());
+	private static final Map<SceKernelThreadInfo, RuntimeThread> threads = new ConcurrentHashMap<SceKernelThreadInfo, RuntimeThread>();
+	private static final Map<SceKernelThreadInfo, RuntimeThread> toBeStoppedThreads = new ConcurrentHashMap<SceKernelThreadInfo, RuntimeThread>();
+	private static final Map<SceKernelThreadInfo, RuntimeThread> alreadyStoppedThreads = new ConcurrentHashMap<SceKernelThreadInfo, RuntimeThread>();
 	private static final List<Thread> alreadySwitchedStoppedThreads = Collections.synchronizedList(new ArrayList<Thread>());
-	private static final Map<SceKernelThreadInfo, RuntimeThread> toBeDeletedThreads = Collections.synchronizedMap(new HashMap<SceKernelThreadInfo, RuntimeThread>());
+	private static final Map<SceKernelThreadInfo, RuntimeThread> toBeDeletedThreads = new ConcurrentHashMap<SceKernelThreadInfo, RuntimeThread>();
 	public  static volatile SceKernelThreadInfo currentThread = null;
 	private static volatile RuntimeThread currentRuntimeThread = null;
 	private static final Object waitForEnd = new Object();

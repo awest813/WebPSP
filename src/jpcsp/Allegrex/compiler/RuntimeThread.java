@@ -57,15 +57,8 @@ public class RuntimeThread extends Thread {
 	}
 
 	public void suspendRuntimeExecution() {
-		boolean acquired = false;
-
-		while (!acquired) {
-			try {
-				semaphore.acquire();
-				acquired = true;
-			} catch (InterruptedException e) {
-			}
-		}
+		// Use acquireUninterruptibly to avoid exception-handling overhead in tight loop
+		semaphore.acquireUninterruptibly();
 	}
 
 	public void continueRuntimeExecution() {

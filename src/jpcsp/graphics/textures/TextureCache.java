@@ -64,12 +64,13 @@ public class TextureCache {
 		textureAlreadyHashed = new HashSet<Integer>();
 	}
 
-	private Integer getKey(int addr, int clutAddr, int clutStart, int clutMode) {
+	// Return primitive int to minimize autoboxing; boxing occurs only at map boundaries
+	private int getKey(int addr, int clutAddr, int clutStart, int clutMode) {
 		// Some games use the same texture address with different cluts.
 		// Keep a combination of both texture address and clut address in the cache.
 		// Also, use the clutStart as this parameter can be used to offset the clut address.
 		int clutEntrySize = clutMode == GeCommands.CMODE_FORMAT_32BIT_ABGR8888 ? 4 : 2;
-		return Integer.valueOf(addr + clutAddr + (clutStart << 4) * clutEntrySize);
+		return addr + clutAddr + (clutStart << 4) * clutEntrySize;
 	}
 
 	public boolean hasTexture(int addr, int clutAddr, int clutStart, int clutMode) {
@@ -81,7 +82,7 @@ public class TextureCache {
 	}
 
 	public void addTexture(IRenderingEngine re, Texture texture) {
-		Integer key = getKey(texture.getAddr(), texture.getClutAddr(), texture.getClutStart(), texture.getClutMode());
+		int key = getKey(texture.getAddr(), texture.getClutAddr(), texture.getClutStart(), texture.getClutMode());
 		Texture previousTexture = cache.get(key);
 		if (previousTexture != null) {
 		    previousTexture.deleteTexture(re);
@@ -168,7 +169,7 @@ public class TextureCache {
 				}
 				texture.deleteTexture(re);
 				lit.remove();
-				Integer key = getKey(texture.getAddr(), texture.getClutAddr(), texture.getClutStart(), texture.getClutMode());
+				int key = getKey(texture.getAddr(), texture.getClutAddr(), texture.getClutStart(), texture.getClutMode());
 				cache.remove(key);
 				statistics.entriesRemoved++;
 			}
